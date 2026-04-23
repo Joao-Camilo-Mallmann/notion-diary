@@ -2,8 +2,8 @@ name: main
 
 on:
   schedule:
-    - cron: "0 3 * * *"  # 00:00 horário de Brasília (UTC-3)
-  workflow_dispatch:       # permite rodar manualmente pelo GitHub também
+    - cron: "0 3 * * *" # 00:00 horário de Brasília (UTC-3)
+  workflow_dispatch: # permite rodar manualmente pelo GitHub também
 
 jobs:
   criar-daily:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Instalar dependências
         run: npm install
