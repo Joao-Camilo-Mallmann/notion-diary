@@ -2,6 +2,8 @@
 
 > A tiny Notion helper that creates one clean daily note every day, with no duplicates.
 
+> Uses GitHub Actions to automate the daily task and keep the workflow simple, fast, and hands-free.
+
 ## ✨ At a Glance
 
 - 📅 Finds today automatically.
