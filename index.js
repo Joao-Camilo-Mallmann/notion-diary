@@ -111,7 +111,7 @@ async function findMesBlock(anoBlockId, nomeMes) {
 async function diaJaExiste(mesBlockId, isoDate) {
   const blocos = await getChildren(mesBlockId);
   for (const b of blocos) {
-    if (b.type === "heading_1" && b.heading_1?.is_toggleable) {
+    if (isBlocoDia(b)) {
       for (const rt of b.heading_1.rich_text) {
         if (rt.type === "mention" && rt.mention?.type === "date") {
           if (rt.mention.date.start === isoDate) return true;
@@ -120,6 +120,17 @@ async function diaJaExiste(mesBlockId, isoDate) {
     }
   }
   return false;
+}
+
+/** Identifica se o bloco representa um dia (heading_1 toggle com mention-date). */
+function isBlocoDia(block) {
+  if (!(block.type === "heading_1" && block.heading_1?.is_toggleable)) {
+    return false;
+  }
+
+  return block.heading_1.rich_text.some(
+    (rt) => rt.type === "mention" && rt.mention?.type === "date",
+  );
 }
 
 /**
@@ -165,9 +176,21 @@ async function criarMes(anoBlockId, mes) {
 async function criarDia(mesBlockId, isoDate) {
   console.log(`📝 Criando dia: ${isoDate} em ${mesBlockId}`);
 
+  const filhosMes = await getChildren(mesBlockId);
+  const primeiroDiaIndex = filhosMes.findIndex((b) => isBlocoDia(b));
+
+  const position =
+    primeiroDiaIndex <= 0
+      ? { type: "start" }
+      : {
+          type: "after_block",
+          after_block: { id: filhosMes[primeiroDiaIndex - 1].id },
+        };
+
   // Cria o heading do dia com mention-date
   const diaBlock = await notion.blocks.children.append({
     block_id: mesBlockId,
+    position,
     children: [
       {
         type: "heading_1",
