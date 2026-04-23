@@ -179,18 +179,13 @@ async function criarDia(mesBlockId, isoDate) {
   const filhosMes = await getChildren(mesBlockId);
   const primeiroDiaIndex = filhosMes.findIndex((b) => isBlocoDia(b));
 
-  const position =
-    primeiroDiaIndex <= 0
-      ? { type: "start" }
-      : {
-          type: "after_block",
-          after_block: { id: filhosMes[primeiroDiaIndex - 1].id },
-        };
+  // Para maior compatibilidade com versões antigas da API/SDK, usamos `after`.
+  // Isso insere o novo dia antes do primeiro dia já existente (no topo da lista de dias).
+  const beforeFirstDayAnchorId =
+    primeiroDiaIndex > 0 ? filhosMes[primeiroDiaIndex - 1].id : undefined;
 
-  // Cria o heading do dia com mention-date
-  const diaBlock = await notion.blocks.children.append({
+  const createDayPayload = {
     block_id: mesBlockId,
-    position,
     children: [
       {
         type: "heading_1",
@@ -208,7 +203,14 @@ async function criarDia(mesBlockId, isoDate) {
         },
       },
     ],
-  });
+  };
+
+  if (beforeFirstDayAnchorId) {
+    createDayPayload.after = beforeFirstDayAnchorId;
+  }
+
+  // Cria o heading do dia com mention-date
+  const diaBlock = await notion.blocks.children.append(createDayPayload);
 
   const diaId = diaBlock.results[0].id;
 
