@@ -1,0 +1,13 @@
+{
+  "name": "daily-notion",
+  "version": "1.0.0",
+  "description": "Cria a daily note no Notion todo dia à meia-noite",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.15"
+  }
+}
