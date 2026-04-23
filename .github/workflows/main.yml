@@ -1,0 +1,28 @@
+name: main
+
+on:
+  schedule:
+    - cron: "0 3 * * *"  # 00:00 horário de Brasília (UTC-3)
+  workflow_dispatch:       # permite rodar manualmente pelo GitHub também
+
+jobs:
+  criar-daily:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Rodar script
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: node index.js
