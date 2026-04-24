@@ -1,26 +1,27 @@
-import { MES_CORES, NOMES_MES, notion, PAGE_ID } from "./config.js";
-import { isBlocoDia } from "./helpers.js";
+import { MES_CORES, NOMES_MES, PAGE_ID, notion } from "./config.ts";
+import { isBlocoDia } from "./helpers.ts";
+import type { Heading1Block, NotionBlock } from "./types/index.ts";
 
 // ─── NOTION API ───────────────────────────────────────────────────────────────
 
 /** Busca todos os blocos filhos de um bloco (paginado) */
-async function getChildren(blockId) {
-  const children = [];
-  let cursor;
+export async function getChildren(blockId: string): Promise<NotionBlock[]> {
+  const children: NotionBlock[] = [];
+  let cursor: string | undefined;
   do {
     const res = await notion.blocks.children.list({
       block_id: blockId,
       page_size: 100,
       start_cursor: cursor,
     });
-    children.push(...res.results);
-    cursor = res.has_more ? res.next_cursor : undefined;
+    children.push(...(res.results as NotionBlock[]));
+    cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
   } while (cursor);
   return children;
 }
 
 /** Encontra o toggle do ANO dentro da página */
-async function findAnoBlock(ano) {
+export async function findAnoBlock(ano: number): Promise<NotionBlock | null> {
   const blocos = await getChildren(PAGE_ID);
   for (const b of blocos) {
     if (b.type === "heading_1" && b.heading_1?.is_toggleable) {
@@ -32,7 +33,10 @@ async function findAnoBlock(ano) {
 }
 
 /** Encontra o toggle do MÊS dentro do bloco do ANO */
-async function findMesBlock(anoBlockId, nomeMes) {
+export async function findMesBlock(
+  anoBlockId: string,
+  nomeMes: string,
+): Promise<NotionBlock | null> {
   const blocos = await getChildren(anoBlockId);
   for (const b of blocos) {
     if (b.type === "heading_1" && b.heading_1?.is_toggleable) {
@@ -44,11 +48,15 @@ async function findMesBlock(anoBlockId, nomeMes) {
 }
 
 /** Verifica se já existe um dia (heading_1 toggle com mention-date) dentro do mês */
-async function diaJaExiste(mesBlockId, isoDate) {
+export async function diaJaExiste(
+  mesBlockId: string,
+  isoDate: string,
+): Promise<boolean> {
   const blocos = await getChildren(mesBlockId);
   for (const b of blocos) {
     if (isBlocoDia(b)) {
-      for (const rt of b.heading_1.rich_text) {
+      const headingBlock = b as Heading1Block;
+      for (const rt of headingBlock.heading_1.rich_text) {
         if (rt.type === "mention" && rt.mention?.type === "date") {
           if (rt.mention.date.start === isoDate) return true;
         }
@@ -59,9 +67,12 @@ async function diaJaExiste(mesBlockId, isoDate) {
 }
 
 /** Cria o bloco do MÊS dentro do bloco ANO */
-async function criarMes(anoBlockId, mes) {
+export async function criarMes(
+  anoBlockId: string,
+  mes: number,
+): Promise<string> {
   const nome = NOMES_MES[mes];
-  const cor = MES_CORES[mes] || "default";
+  const cor = MES_CORES[mes] ?? "default";
 
   console.log(`📅 Criando mês: ${nome} (cor: ${cor})`);
 
@@ -72,7 +83,7 @@ async function criarMes(anoBlockId, mes) {
         type: "heading_1",
         heading_1: {
           rich_text: [{ type: "text", text: { content: nome } }],
-          color: cor === "default" ? "default" : `${cor}_background`,
+          color: cor === "default" ? "default" : (`${cor}_background` as never),
           is_toggleable: true,
         },
       },
@@ -94,10 +105,12 @@ async function criarMes(anoBlockId, mes) {
  *     ---
  *     -
  */
-async function criarDia(mesBlockId, isoDate) {
+export async function criarDia(
+  mesBlockId: string,
+  isoDate: string,
+): Promise<string> {
   console.log(`📝 Criando dia: ${isoDate} em ${mesBlockId}`);
 
-  // Insere sempre no início da lista do mês
   const diaBlock = await notion.blocks.children.append({
     block_id: mesBlockId,
     children: [
@@ -107,10 +120,7 @@ async function criarDia(mesBlockId, isoDate) {
           rich_text: [
             {
               type: "mention",
-              mention: {
-                type: "date",
-                date: { start: isoDate },
-              },
+              mention: { date: { start: isoDate } },
             },
           ],
           is_toggleable: true,
@@ -118,7 +128,7 @@ async function criarDia(mesBlockId, isoDate) {
       },
     ],
     position: { type: "start" },
-  });
+  } as any);
 
   const diaId = diaBlock.results[0].id;
 
@@ -156,9 +166,3 @@ async function criarDia(mesBlockId, isoDate) {
   console.log(`✅ Dia ${isoDate} criado!`);
   return diaId;
 }
-
-export {
-    criarDia, criarMes, diaJaExiste, findAnoBlock,
-    findMesBlock, getChildren
-};
-

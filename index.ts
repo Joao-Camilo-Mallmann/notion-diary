@@ -1,16 +1,16 @@
-import { NOMES_MES, NOTION_TOKEN } from "./src/config.js";
-import { hoje } from "./src/helpers.js";
+import { NOMES_MES, NOTION_TOKEN } from "./src/config.ts";
+import { hoje } from "./src/helpers.ts";
 import {
-  criarDia,
-  criarMes,
-  diaJaExiste,
-  findAnoBlock,
-  findMesBlock,
-} from "./src/notion.js";
+    criarDia,
+    criarMes,
+    diaJaExiste,
+    findAnoBlock,
+    findMesBlock,
+} from "./src/notion.ts";
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 
-async function run() {
+async function run(): Promise<void> {
   if (!NOTION_TOKEN) {
     console.error("❌ NOTION_TOKEN não definido! Exporte ele antes de rodar.");
     process.exit(1);
@@ -33,12 +33,13 @@ async function run() {
 
   // 2. Achar (ou criar) bloco do mês
   let mesBlock = await findMesBlock(anoBlock.id, nomeMes);
+  let mesBlockId: string;
 
   if (!mesBlock) {
     if (dia === 1) {
       console.log(`📅 Primeiro dia do mês! Criando ${nomeMes}...`);
       const mesId = await criarMes(anoBlock.id, mes);
-      mesBlock = { id: mesId };
+      mesBlockId = mesId;
     } else {
       console.error(`❌ Mês "${nomeMes}" não encontrado e hoje não é dia 1.`);
       console.error("   Crie o mês manualmente ou aguarde o dia 1.");
@@ -46,24 +47,25 @@ async function run() {
     }
   } else {
     console.log(`✅ Mês ${nomeMes} encontrado: ${mesBlock.id}`);
+    mesBlockId = mesBlock.id;
   }
 
   // 3. Verificar se o dia já existe
-  const jaExiste = await diaJaExiste(mesBlock.id, iso);
+  const jaExiste = await diaJaExiste(mesBlockId, iso);
   if (jaExiste) {
     console.log(`ℹ️  Dia ${iso} já existe. Nada a fazer.`);
     return;
   }
 
   // 4. Criar o dia
-  await criarDia(mesBlock.id, iso);
+  await criarDia(mesBlockId, iso);
 
   console.log(`\n✨ Pronto! Daily de ${iso} criada no Notion.\n`);
 }
 
-run().catch((err) => {
+run().catch((err: Error) => {
   console.error("❌ Erro:", err.message);
-  if (err.code === "unauthorized") {
+  if ((err as NodeJS.ErrnoException).code === "unauthorized") {
     console.error("   Token inválido ou sem permissão na página.");
   }
   process.exit(1);

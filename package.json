@@ -3,12 +3,19 @@
   "version": "1.0.0",
   "description": "Cria a daily note no Notion todo dia à meia-noite",
   "type": "module",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js"
+    "build": "tsc",
+    "start": "bun run build && node dist/index.js",
+    "dev": "bun run --hot index.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.15"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
   }
 }

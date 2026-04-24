@@ -1,3 +1,7 @@
 node_modules/
 .env
 *.log
+dist/*
+bun.lock
+yarn.lock
+package-lock.json
