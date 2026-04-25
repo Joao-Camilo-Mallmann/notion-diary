@@ -19,12 +19,17 @@ PAGE_ID (page)
 ### Append at position start
 
 ```js
-await notion.blocks.children.append({
-  block_id: parentId,
-  children: [...],
-  position: { type: "start" }, // keeps newest day at top
+await notion.request({
+  path: `blocks/${parentId}/children`,
+  method: "patch",
+  body: {
+    children: [...],
+    position: { type: "start" }, // keeps newest day at top
+  },
 });
 ```
+
+Note: `notion.blocks.children.append()` filters request fields and only sends `children`/`after` in this SDK version.
 
 ### Paginated children list
 

@@ -25,7 +25,7 @@
 ## Do
 
 - Keep all date math in `helpers.ts` using `America/Sao_Paulo` timezone
-- Use `position: { type: "start" }` when appending day blocks so newest days appear at top
+- Use the `appendChildrenAtStart()` helper (raw `notion.request`) when inserting day blocks so `position: { type: "start" }` reaches the API and newest days stay at top
 - Paginate Notion list calls via `getChildren()` — never assume a single page of results
 - CI should compile before running (`bun run build`, then `node dist/index.js`)
 
@@ -35,4 +35,4 @@
 - Don't hardcode dates or IDs outside `src/config.ts`
 - Don't use `require()` — project is ESM
 - Don't use `npm` or `yarn` — project uses Bun
-- Don't add `@notionhq/client` workarounds; use the SDK types as-is
+- Don't add ad-hoc `@notionhq/client` workarounds; keep any compatibility handling centralized in `appendChildrenAtStart()`

@@ -4,6 +4,28 @@ import type { Heading1Block, NotionBlock } from "./types/index.ts";
 
 // ─── NOTION API ───────────────────────────────────────────────────────────────
 
+type AppendChildrenAtStartResponse = {
+  results: Array<{ id: string }>;
+};
+
+/**
+ * Usa request direto para manter "position" no corpo.
+ * O SDK oficial filtra o payload de append e remove campos extras.
+ */
+async function appendChildrenAtStart(
+  blockId: string,
+  children: unknown[],
+): Promise<AppendChildrenAtStartResponse> {
+  return notion.request<AppendChildrenAtStartResponse>({
+    path: `blocks/${blockId}/children`,
+    method: "patch",
+    body: {
+      children,
+      position: { type: "start" },
+    },
+  });
+}
+
 /** Busca todos os blocos filhos de um bloco (paginado) */
 export async function getChildren(blockId: string): Promise<NotionBlock[]> {
   const children: NotionBlock[] = [];
@@ -111,24 +133,20 @@ export async function criarDia(
 ): Promise<string> {
   console.log(`📝 Criando dia: ${isoDate} em ${mesBlockId}`);
 
-  const diaBlock = await notion.blocks.children.append({
-    block_id: mesBlockId,
-    children: [
-      {
-        type: "heading_1",
-        heading_1: {
-          rich_text: [
-            {
-              type: "mention",
-              mention: { date: { start: isoDate } },
-            },
-          ],
-          is_toggleable: true,
-        },
+  const diaBlock = await appendChildrenAtStart(mesBlockId, [
+    {
+      type: "heading_1",
+      heading_1: {
+        rich_text: [
+          {
+            type: "mention",
+            mention: { date: { start: isoDate } },
+          },
+        ],
+        is_toggleable: true,
       },
-    ],
-    position: { type: "start" },
-  } as any);
+    },
+  ]);
 
   const diaId = diaBlock.results[0].id;
 
