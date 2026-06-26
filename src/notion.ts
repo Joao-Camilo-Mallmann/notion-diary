@@ -1,5 +1,5 @@
 import { MES_CORES, NOMES_MES, PAGE_ID, notion } from "./config.ts";
-import { isBlocoDia } from "./helpers.ts";
+import { isBlocoDia, withRetry } from "./helpers.ts";
 import type { Heading1Block, NotionBlock } from "./types/index.ts";
 
 // ─── NOTION API ───────────────────────────────────────────────────────────────
@@ -16,14 +16,16 @@ async function appendChildrenAtStart(
   blockId: string,
   children: unknown[],
 ): Promise<AppendChildrenAtStartResponse> {
-  return notion.request<AppendChildrenAtStartResponse>({
-    path: `blocks/${blockId}/children`,
-    method: "patch",
-    body: {
-      children,
-      position: { type: "start" },
-    },
-  });
+  return withRetry(() =>
+    notion.request<AppendChildrenAtStartResponse>({
+      path: `blocks/${blockId}/children`,
+      method: "patch",
+      body: {
+        children,
+        position: { type: "start" },
+      },
+    }),
+  );
 }
 
 /** Busca todos os blocos filhos de um bloco (paginado) */
@@ -31,11 +33,13 @@ export async function getChildren(blockId: string): Promise<NotionBlock[]> {
   const children: NotionBlock[] = [];
   let cursor: string | undefined;
   do {
-    const res = await notion.blocks.children.list({
-      block_id: blockId,
-      page_size: 100,
-      start_cursor: cursor,
-    });
+    const res = await withRetry(() =>
+      notion.blocks.children.list({
+        block_id: blockId,
+        page_size: 100,
+        start_cursor: cursor,
+      }),
+    );
     children.push(...(res.results as NotionBlock[]));
     cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
   } while (cursor);
@@ -98,19 +102,21 @@ export async function criarMes(
 
   console.log(`📅 Criando mês: ${nome} (cor: ${cor})`);
 
-  const res = await notion.blocks.children.append({
-    block_id: anoBlockId,
-    children: [
-      {
-        type: "heading_1",
-        heading_1: {
-          rich_text: [{ type: "text", text: { content: nome } }],
-          color: cor === "default" ? "default" : (`${cor}_background` as never),
-          is_toggleable: true,
+  const res = await withRetry(() =>
+    notion.blocks.children.append({
+      block_id: anoBlockId,
+      children: [
+        {
+          type: "heading_1",
+          heading_1: {
+            rich_text: [{ type: "text", text: { content: nome } }],
+            color: cor === "default" ? "default" : (`${cor}_background` as never),
+            is_toggleable: true,
+          },
         },
-      },
-    ],
-  });
+      ],
+    }),
+  );
 
   const mesId = res.results[0].id;
   console.log(`✅ Mês criado: ${mesId}`);
@@ -150,36 +156,38 @@ export async function criarDia(
 
   const diaId = diaBlock.results[0].id;
 
-  await notion.blocks.children.append({
-    block_id: diaId,
-    children: [
-      {
-        type: "bulleted_list_item",
-        bulleted_list_item: {
-          rich_text: [{ type: "text", text: { content: "Positivo: " } }],
+  await withRetry(() =>
+    notion.blocks.children.append({
+      block_id: diaId,
+      children: [
+        {
+          type: "bulleted_list_item",
+          bulleted_list_item: {
+            rich_text: [{ type: "text", text: { content: "Positivo: " } }],
+          },
         },
-      },
-      {
-        type: "bulleted_list_item",
-        bulleted_list_item: {
-          rich_text: [{ type: "text", text: { content: "Gratidão: " } }],
+        {
+          type: "bulleted_list_item",
+          bulleted_list_item: {
+            rich_text: [{ type: "text", text: { content: "Gratidão: " } }],
+          },
         },
-      },
-      {
-        type: "bulleted_list_item",
-        bulleted_list_item: {
-          rich_text: [{ type: "text", text: { content: "Aprendizagem: " } }],
+        {
+          type: "bulleted_list_item",
+          bulleted_list_item: {
+            rich_text: [{ type: "text", text: { content: "Aprendizagem: " } }],
+          },
         },
-      },
-      { type: "divider", divider: {} },
-      {
-        type: "bulleted_list_item",
-        bulleted_list_item: {
-          rich_text: [{ type: "text", text: { content: "" } }],
+        { type: "divider", divider: {} },
+        {
+          type: "bulleted_list_item",
+          bulleted_list_item: {
+            rich_text: [{ type: "text", text: { content: "" } }],
+          },
         },
-      },
-    ],
-  });
+      ],
+    }),
+  );
 
   console.log(`✅ Dia ${isoDate} criado!`);
   return diaId;
