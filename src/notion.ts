@@ -1,3 +1,4 @@
+import { iteratePaginatedAPI } from "@notionhq/client";
 import { MES_CORES, NOMES_MES, PAGE_ID, notion } from "./config.ts";
 import { isBlocoDia, withRetry } from "./helpers.ts";
 import type { Heading1Block, NotionBlock } from "./types/index.ts";
@@ -30,20 +31,16 @@ async function appendChildrenAtStart(
 
 /** Busca todos os blocos filhos de um bloco (paginado) */
 export async function getChildren(blockId: string): Promise<NotionBlock[]> {
-  const children: NotionBlock[] = [];
-  let cursor: string | undefined;
-  do {
-    const res = await withRetry(() =>
-      notion.blocks.children.list({
-        block_id: blockId,
-        page_size: 100,
-        start_cursor: cursor,
-      }),
-    );
-    children.push(...(res.results as NotionBlock[]));
-    cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
-  } while (cursor);
-  return children;
+  return withRetry(async () => {
+    const children: NotionBlock[] = [];
+    for await (const block of iteratePaginatedAPI(notion.blocks.children.list, {
+      block_id: blockId,
+      page_size: 30,
+    })) {
+      children.push(block as NotionBlock);
+    }
+    return children;
+  });
 }
 
 /** Encontra o toggle do ANO dentro da página */
