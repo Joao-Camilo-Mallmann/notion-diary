@@ -5,10 +5,10 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "node node_modules/typescript/bin/tsc",
     "start": "bun run build && node dist/index.js",
     "dev": "bun run --hot index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.15"

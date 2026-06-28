@@ -39,4 +39,7 @@ export const NOMES_MES: string[] = [
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
-export const notion = new Client({ auth: NOTION_TOKEN });
+export const notion = new Client({
+  auth: NOTION_TOKEN,
+  fetch: globalThis.fetch,
+});
