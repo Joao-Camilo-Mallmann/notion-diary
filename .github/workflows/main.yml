@@ -25,4 +25,4 @@ jobs:
       - name: Rodar script
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: node dist/index.js
+        run: bun dist/index.js
