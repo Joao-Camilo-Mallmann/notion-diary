@@ -1,68 +1,68 @@
 # Daily Notion
 
-Automação para criar blocos de Daily Notes diários no Notion à meia-noite (horário de Brasília) usando **GitHub Actions (Cron)** e a API do Notion.
+Automated daily note block creator for Notion running at midnight (Brasília Time / UTC-3) powered by **GitHub Actions (Cron)** and the Notion API.
 
 ---
 
-## ⏰ Como funciona a automação (Cron)
+## ⏰ How the Automation Works (Cron)
 
-O script é executado automaticamente via **GitHub Actions** agendado por **cron**:
+The script runs automatically via **GitHub Actions** scheduled with **cron**:
 
-* **Expressão Cron:** `0 3 * * *` (todos os dias às 03:00 UTC, equivalente a **00:00 no Horário de Brasília / UTC-3**).
-* **Arquivo do Workflow:** [`.github/workflows/main.yml`](.github/workflows/main.yml)
-* **Execução manual:** O workflow também possui `workflow_dispatch`, permitindo ser acionado manualmente pela aba **Actions** no GitHub.
+* **Cron Expression:** `0 3 * * *` (every day at 03:00 UTC, which corresponds to **00:00 Brasília Time / UTC-3**).
+* **Workflow File:** [`.github/workflows/main.yml`](.github/workflows/main.yml)
+* **Manual Trigger:** The workflow includes `workflow_dispatch`, enabling manual runs directly from the **Actions** tab in GitHub.
 
 > [!WARNING]
-> **Atenção à inatividade no GitHub:**  
-> O GitHub desativa automaticamente workflows agendados via cron se o repositório ficar **60 dias sem commits ou atividade**. Caso o daily pare de rodar de repente, acesse a aba **Actions** no GitHub e clique em **Enable workflow** ou dispare uma execução manual.
+> **GitHub Actions 60-Day Inactivity Policy:**  
+> GitHub automatically disables scheduled workflows if the repository has had **no commits or activity for 60 consecutive days**. If your daily notes stop creating automatically, visit the **Actions** tab on GitHub and click **Enable workflow** or trigger a manual run.
 
 ---
 
-## 🏗️ Estrutura esperada no Notion
+## 🏗️ Expected Notion Structure
 
-Para que o script funcione corretamente:
-1. **Página Pai:** A página configurada com o `PAGE_ID` precisa estar compartilhada com a integração do Notion.
-2. **Toggle do Ano:** Deve existir um bloco `heading_1` toggle com o ano atual (ex: `2025`, `2026`).
-3. **Toggle do Mês:**
-   - Criado automaticamente se o script rodar no **dia 1** do mês.
-   - Caso o dia 1 não tenha sido executado pela automação, crie o toggle do mês manualmente (ex: `Jan`, `Fev`, `Mar`, etc.) dentro do ano.
-4. **Bloco do Dia:** Criado automaticamente no início da lista do mês com a menção de data `@Data` e a estrutura padrão:
+For the script to execute successfully:
+1. **Parent Page:** The page configured by `PAGE_ID` must be shared with your Notion integration.
+2. **Year Toggle:** A `heading_1` toggle block with the current year (e.g., `2025`, `2026`) must already exist on the page.
+3. **Month Toggle:**
+   - Automatically created if the script runs on **day 1** of the month.
+   - If the first day did not run automatically, manually create the month toggle (e.g., `Jan`, `Fev`, `Mar`, etc.) inside the year toggle.
+4. **Day Block:** Created at the top of the month toggle list with a date mention `@Date` and the default template:
    - `Positivo:`
    - `Gratidão:`
    - `Aprendizagem:`
-   - `---` (Divisor)
-   - Bloco em branco para anotações
+   - `---` (Divider)
+   - Blank bullet point for quick notes
 
 ---
 
-## 🛠️ Tecnologias
+## 🛠️ Stack
 
 - **Runtime & Package Manager:** [Bun](https://bun.sh/)
-- **Linguagem:** TypeScript
+- **Language:** TypeScript
 - **Notion SDK:** `@notionhq/client` v2
-- **CI/CD / Agendador:** GitHub Actions (Cron)
+- **CI/CD / Scheduler:** GitHub Actions (Cron)
 
 ---
 
-## 🚀 Como rodar localmente
+## 🚀 Running Locally
 
-### 1. Instalar dependências
+### 1. Install dependencies
 ```bash
 bun install
 ```
 
-### 2. Configurar variáveis de ambiente
-Defina o seu token da integração do Notion:
+### 2. Set environment variables
+Export your Notion integration token:
 ```bash
-export NOTION_TOKEN="seu_token_aqui"
+export NOTION_TOKEN="your_token_here"
 ```
 
-### 3. Executar
+### 3. Run
 ```bash
-# Rodar desenvolvimento
+# Development mode
 bun run dev
 
-# Ou compilar e executar como em produção
+# Or build and run production output
 bun run build
-node dist/index.js
+bun dist/index.js
 ```
