@@ -4,9 +4,9 @@
 
 ```
 PAGE_ID (page)
-└── <year> heading_1 toggle          ← findAnoBlock()
-    └── <month name> heading_1 toggle ← findMesBlock() / criarMes()
-        └── <date mention> heading_1 toggle  ← criarDia()  [position: start]
+└── <year> heading_1 toggle          ← NotionDiaryRepository.findYearBlock()
+    └── <month name> heading_1 toggle ← NotionDiaryRepository.findMonthBlock() / createMonthBlock()
+        └── <date mention> heading_1 toggle  ← NotionDiaryRepository.createDayBlock()  [position: start]
             ├── bulleted_list_item "Positivo: "
             ├── bulleted_list_item "Gratidão: "
             ├── bulleted_list_item "Aprendizagem: "
@@ -18,8 +18,8 @@ PAGE_ID (page)
 
 ### Append at position start
 
-```js
-await notion.request({
+```ts
+await client.request({
   path: `blocks/${parentId}/children`,
   method: "patch",
   body: {
@@ -29,23 +29,20 @@ await notion.request({
 });
 ```
 
-Note: `notion.blocks.children.append()` filters request fields and only sends `children`/`after` in this SDK version.
+Note: `client.blocks.children.append()` filters request fields and only sends `children`/`after` in this SDK version. `NotionDiaryRepository` centralizes this raw request in `appendChildrenAtStart()`.
 
 ### Paginated children list
 
-```js
-// Always use getChildren() from src/notion.ts — never call list() directly
-const blocks = await getChildren(blockId);
-```
+All listing operations in `NotionDiaryRepository` use paginated cursor iteration via `withRetry` to guarantee complete block traversal.
 
 ## Month colors
 
-Colors map is in `src/config.ts` as `MES_CORES` (0–11). Applied as `${color}_background` on the `heading_1.color` field. `"default"` is passed as-is (no suffix).
+Color mapping is defined in `src/infrastructure/config/app-config.ts` (`APP_CONFIG.monthColors`). Applied as `${color}_background` on the `heading_1.color` field. `"default"` is passed as-is (no suffix).
 
 ## Date mention block
 
-Day toggles use `rich_text[0].type === "mention"` with `mention.type === "date"` and `mention.date.start === "YYYY-MM-DD"`. Use `isBlocoDia()` from `src/helpers.ts` to detect them.
+Day toggles use `rich_text[0].type === "mention"` with `mention.type === "date"` and `mention.date.start === "YYYY-MM-DD"`. Detected via `isDayBlock()` inside `NotionDiaryRepository`.
 
 ## Idempotency
 
-`diaJaExiste()` must be called before `criarDia()`. The GitHub Action can re-run safely.
+`NotionDiaryRepository.dayExists()` is checked by `CreateDailyNoteUseCase` before creating a day note. The GitHub Action can re-run safely at any time.

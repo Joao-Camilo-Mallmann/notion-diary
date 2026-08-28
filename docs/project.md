@@ -14,33 +14,49 @@
 - Trigger: Also supports manual trigger (`workflow_dispatch`).
 - **GitHub Inactivity Caveat**: GitHub automatically suspends scheduled workflows if the repository has no commits for 60 consecutive days. If it stops, re-enable via Actions UI.
 
+## Architecture & SOLID Principles
+
+The codebase follows Clean Architecture and SOLID design patterns:
+
+- **Domain (`src/domain/`)**: Pure domain models (`DiaryDate`), types (`NotionBlock`), and contract interfaces (`INotionRepository`, `IDateProvider`, `IDiaryTemplate`). Zero external framework dependencies.
+- **Application (`src/application/`)**: Use cases (`CreateDailyNoteUseCase`) orchestrating the business workflow, and note templates (`DefaultDiaryTemplate`).
+- **Infrastructure (`src/infrastructure/`)**: External integrations and implementations (`NotionDiaryRepository`, `SaoPauloDateProvider`, `createNotionClient`, `APP_CONFIG`, `withRetry`).
+- **Entry Point (`index.ts`)**: Pure composition root wiring dependencies and managing execution lifecycle.
+
 ## Module responsibilities
 
-| Module           | What belongs here                                |
-| ---------------- | ------------------------------------------------ |
-| `src/config.ts`  | Constants and Notion client init only — no logic |
-| `src/helpers.ts` | Pure functions, no API calls, no side-effects    |
-| `src/notion.ts`  | All `notion.*` calls — nothing else              |
-| `src/types/*`    | Shared project types only                        |
-| `index.ts`       | Imports + `run()` orchestration only             |
+| Layer / Directory                 | What belongs here                                                                  |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `src/domain/interfaces/`          | Abstractions (`INotionRepository`, `IDateProvider`, `IDiaryTemplate`)              |
+| `src/domain/models/`              | Domain value objects and models (`DiaryDate`)                                      |
+| `src/domain/types/`               | Notion block types (`NotionBlock`, `Heading1Block`, `NotionColor`)                  |
+| `src/application/use-cases/`      | Business workflows (`CreateDailyNoteUseCase`)                                      |
+| `src/application/templates/`      | Diary note templates implementing `IDiaryTemplate` (`DefaultDiaryTemplate`)         |
+| `src/infrastructure/config/`      | Configuration and environment variables (`APP_CONFIG`)                            |
+| `src/infrastructure/date/`        | Date providers (`SaoPauloDateProvider`)                                            |
+| `src/infrastructure/notion/`      | Notion SDK client & repository (`NotionDiaryRepository`, `createNotionClient`)    |
+| `src/infrastructure/utils/`       | General infrastructure utilities (`withRetry`, `padZero`)                          |
+| `index.ts`                        | Composition root (Dependency Injection) + CLI exit handling                       |
 
-## Naming
+## Naming & Conventions
 
-- Functions: camelCase in Portuguese (`criarDia`, `findAnoBlock`, `diaJaExiste`)
-- Constants: UPPER_SNAKE in Portuguese (`MES_CORES`, `NOMES_MES`, `PAGE_ID`)
+- Classes: PascalCase (`CreateDailyNoteUseCase`, `NotionDiaryRepository`, `DefaultDiaryTemplate`)
+- Interfaces: `I` prefix + PascalCase (`INotionRepository`, `IDateProvider`, `IDiaryTemplate`)
+- Methods & functions: camelCase (`findYearBlock`, `createDayBlock`, `execute`, `getToday`)
+- Constants: UPPER_SNAKE (`APP_CONFIG`)
 
 ## Do
 
-- Keep all date math in `helpers.ts` using `America/Sao_Paulo` timezone
-- Use the `appendChildrenAtStart()` helper (raw `notion.request`) when inserting day blocks so `position: { type: "start" }` reaches the API and newest days stay at top
+- Maintain clear separation between domain abstractions and infrastructure implementations
+- Program to interfaces, injecting dependencies through constructors
+- Keep all timezone handling inside `IDateProvider` implementations (`America/Sao_Paulo`)
+- Use `NotionDiaryRepository.appendChildrenAtStart` so `position: { type: "start" }` keeps newest days at top
 - Paginate Notion list calls via `getChildren()` — never assume a single page of results
-- CI should compile before running (`bun run build`, then `node dist/index.js`)
-- Ensure Notion page has the year toggle created, and month toggle is present (or created on day 1)
+- CI compiles before running (`bun run build`, then `node dist/index.js` or `bun dist/index.js`)
 
 ## Don't
 
-- Don't add new top-level files without updating `agents.md`
-- Don't hardcode dates or IDs outside `src/config.ts`
-- Don't use `require()` — project is ESM
+- Don't import concrete infrastructure classes into domain models or interfaces
+- Don't hardcode config values outside `src/infrastructure/config/app-config.ts`
+- Don't use `require()` — project is pure ESM
 - Don't use `npm` or `yarn` — project uses Bun
-- Don't add ad-hoc `@notionhq/client` workarounds; keep any compatibility handling centralized in `appendChildrenAtStart()`
