@@ -5,7 +5,14 @@
 - Bun (runtime + package manager), ESM (`import`/`export`, `"type": "module"` in package.json)
 - TypeScript compiled with `tsc` to `dist/`
 - `@notionhq/client` v2 for Notion API
-- GitHub Actions for daily automation
+- GitHub Actions for daily automation (Cron: `0 3 * * *` = 00:00 UTC-3 America/Sao_Paulo)
+
+## Automation & Scheduling (Cron)
+
+- Workflow: `.github/workflows/main.yml`
+- Schedule: Runs daily at `03:00 UTC` (which corresponds to `00:00` America/Sao_Paulo Brasília Time).
+- Trigger: Also supports manual trigger (`workflow_dispatch`).
+- **GitHub Inactivity Caveat**: GitHub automatically suspends scheduled workflows if the repository has no commits for 60 consecutive days. If it stops, re-enable via Actions UI.
 
 ## Module responsibilities
 
@@ -28,6 +35,7 @@
 - Use the `appendChildrenAtStart()` helper (raw `notion.request`) when inserting day blocks so `position: { type: "start" }` reaches the API and newest days stay at top
 - Paginate Notion list calls via `getChildren()` — never assume a single page of results
 - CI should compile before running (`bun run build`, then `node dist/index.js`)
+- Ensure Notion page has the year toggle created, and month toggle is present (or created on day 1)
 
 ## Don't
 
